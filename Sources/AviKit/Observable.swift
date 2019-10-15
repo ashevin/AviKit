@@ -420,6 +420,7 @@ extension Observer {
 
      - returns: An `Observable` which will retain the most-recently emitted value.
      */
+    @available(*, deprecated)
     public func stateful() -> StatefulObservable<Value> {
         let observable = StatefulObservable<Value>()
         let wb = WeakBox(observable: observable)

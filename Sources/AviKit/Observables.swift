@@ -9,6 +9,25 @@
 import Foundation
 import Dispatch
 
+@propertyWrapper public struct ObservableProperty<Value> {
+    public var wrappedValue: Value {
+        didSet {
+            observer.next(wrappedValue)
+        }
+    }
+
+    private let observer = Observable<Value>()
+
+    public var projectedValue: Observer<Value> {
+        observer.observer()
+    }
+
+    public init(wrappedValue value: Value) {
+        wrappedValue = value
+    }
+}
+
+@available(*, deprecated)
 public final class StatefulObservable<Value>: Observer<Value> {
     public private(set) var value: Value?
     
