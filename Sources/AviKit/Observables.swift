@@ -11,19 +11,17 @@ import Dispatch
 
 @propertyWrapper public struct ObservableProperty<Value> {
     public var wrappedValue: Value {
-        didSet {
-            observer.next(wrappedValue)
-        }
+        didSet { observable.next(wrappedValue) }
     }
 
-    private let observer = Observable<Value>()
+    private let observable = Observable<Value>()
 
-    public var projectedValue: Observer<Value> {
-        observer.observer()
-    }
+    public let projectedValue: Observer<Value>
 
-    public init(wrappedValue value: Value) {
-        wrappedValue = value
+    public init(wrappedValue: Value) {
+        self.wrappedValue = wrappedValue
+
+        projectedValue = observable.observer()
     }
 }
 
