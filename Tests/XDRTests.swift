@@ -53,6 +53,24 @@ class XDRTests: XCTestCase {
         try! XCTAssertEqual(a, XDRDecoder(data: x).decode(UInt64.self))
     }
 
+    func test_float() {
+        let a: Float = 3.14
+        let x = try! XDREncoder.encode(a)
+        try! XCTAssertEqual(a, XDRDecoder(data: x).decode(Float.self))
+    }
+
+    func test_cgfloat() {
+        let a: CGFloat = 3.14
+        let x = try! XDREncoder.encode(a)
+        try! XCTAssertEqual(a, XDRDecoder(data: x).decode(CGFloat.self))
+    }
+
+    func test_double() {
+        let a: Double = 3.14
+        let x = try! XDREncoder.encode(a)
+        try! XCTAssertEqual(a, XDRDecoder(data: x).decode(Double.self))
+    }
+
     func test_int_premature_end() {
         let d = Data([0])
 

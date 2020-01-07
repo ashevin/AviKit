@@ -121,6 +121,29 @@ public class XDRDecoder {
             .reduce(T(0), { $0 << 8 | T($1) })
     }
 
+    fileprivate func read<T: BinaryFloatingPoint>(_ type: T.Type) throws -> T {
+        let byteCount = MemoryLayout<T>.size
+
+        precondition(byteCount == 4 || byteCount == 8)
+
+        guard cursor + byteCount <= data.endIndex else { throw Errors.prematureEndOfData }
+
+        defer { advance(by: byteCount) }
+
+        if byteCount == 4 {
+            let v = data[cursor ..< cursor + byteCount]
+                .reduce(UInt32(0), { $0 << 8 | UInt32($1) })
+
+            return unsafeBitCast(v.bigEndian, to: T.self)
+        }
+        else {
+            let v = data[cursor ..< cursor + byteCount]
+                .reduce(UInt64(0), { $0 << 8 | UInt64($1) })
+
+            return unsafeBitCast(v.bigEndian, to: T.self)
+        }
+    }
+
     fileprivate func advance(by count: Int) { cursor += count }
 }
 
@@ -151,6 +174,22 @@ extension Int32: XDRCodable { }
 extension UInt32: XDRCodable { }
 extension Int64: XDRCodable { }
 extension UInt64: XDRCodable { }
+
+extension BinaryFloatingPoint where Self: XDRCodable {
+    public func encode(to encoder: XDREncoder) throws {
+        var v = self
+
+        withUnsafeBytes(of: &v, encoder.append)
+    }
+
+    public init(from decoder: XDRDecoder) throws {
+        self = try decoder.read(Self.self)
+    }
+}
+
+extension Float: XDRCodable { }
+extension CGFloat: XDRCodable { }
+extension Double: XDRCodable { }
 
 extension String: XDRCodable {
     public init(from decoder: XDRDecoder) throws {
