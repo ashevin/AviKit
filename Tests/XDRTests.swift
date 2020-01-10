@@ -1,9 +1,9 @@
 //
 // XDRTests.swift
-// StellarKitTests
+// AviKitTests
 //
-// Created by Kin Foundation.
-// Copyright © 2018 Kin Foundation. All rights reserved.
+// Created by Avi Shevin.
+// Copyright © 2019 Avi Shevin. All rights reserved.
 //
 
 import XCTest

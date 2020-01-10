@@ -1,9 +1,9 @@
 //
 // Base32Tests.swift
-// KinUtilTests
+// AviKitTests
 //
-// Created by Kin Foundation.
-// Copyright © 2019 Kin Foundation. All rights reserved.
+// Created by Avi Shevin.
+// Copyright © 2019 Avi Shevin. All rights reserved.
 //
 
 import XCTest
