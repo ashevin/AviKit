@@ -188,7 +188,6 @@ extension BinaryFloatingPoint where Self: XDRCodable {
 }
 
 extension Float: XDRCodable { }
-extension CGFloat: XDRCodable { }
 extension Double: XDRCodable { }
 
 extension String: XDRCodable {
