@@ -1,2 +1,4 @@
 .build/
+.swiftpm/
 AviKit.xcodeproj/
+.DS_Store
