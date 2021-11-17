@@ -128,7 +128,7 @@ class ObservableTests: XCTestCase {
         wait(for: [e], timeout: 1)
     }
 
-    func test_linkbag() {
+    func test_unlink() {
         let lb = LinkBag()
 
         let o = Observable<Int>(3)
@@ -159,18 +159,29 @@ class ObservableTests: XCTestCase {
         o.next(3)
     }
 
-    func test_unlink() {
-        let lb = LinkBag()
+    func test_unlink_with_multiple_refs() {
+        let e = expectation(description: "")
 
-        Observable<Int>()
-            .on(finish: { })
-            .add(to: lb)
+        let lb1 = LinkBag()
+        let lb2 = LinkBag()
 
-        XCTAssertFalse(lb.links.isEmpty)
+        let o = Observable<Int>()
 
-        lb.clear()
+        o
+            .map({ $0 })
+            .on(finish: { XCTFail("This should have been deallocated!" )})
+            .add(to: lb1)
 
-        XCTAssertTrue(lb.links.isEmpty)
+        o
+            .on(finish: { e.fulfill() })
+            .add(to: lb2)
+
+        lb1.clear()
+
+        o.next(3)
+        o.finish()
+
+        wait(for: [e], timeout: 1)
     }
 
     func test_accumulate() {
@@ -340,11 +351,11 @@ class ObservableTests: XCTestCase {
             eventCounter -= 1
 
             if eventCounter == 0 {
-            XCTAssertEqual($0[0], 3)
-            XCTAssertEqual($0[1], 2)
-            XCTAssertEqual($0[2], 1)
+                XCTAssertEqual($0[0], 3)
+                XCTAssertEqual($0[1], 2)
+                XCTAssertEqual($0[2], 1)
 
-            e.fulfill()
+                e.fulfill()
             }
         })
 
@@ -451,6 +462,7 @@ class ObservableTests: XCTestCase {
         wait(for: [e], timeout: 1)
     }
 
+    @available(*, deprecated)
     func test_stateful() {
         let o = Observable<Int>()
         let p = o.stateful()
@@ -503,6 +515,58 @@ class ObservableTests: XCTestCase {
         })
 
         wait(for: [e], timeout: 1)
+    }
+
+    func test_distinct() {
+        let e = expectation(description: "")
+
+        let o = Observable<Int>()
+        let p = o.distinct()
+
+        var a: [Int] = []
+
+        var eventCounter = 2
+        p.on(next: {
+            a.append($0)
+
+            eventCounter -= 1
+
+            if eventCounter == 0 { e.fulfill() }
+        })
+
+        o.next(1)
+        o.next(1)
+        o.next(2)
+
+        wait(for: [e], timeout: 1)
+
+        XCTAssertEqual(a, [1, 2])
+    }
+
+    func test_distinct_with_distinct_value_between_duplicates() {
+        let e = expectation(description: "")
+
+        let o = Observable<Int>()
+        let p = o.distinct()
+
+        var a: [Int] = []
+
+        var eventCounter = 3
+        p.on(next: {
+            a.append($0)
+
+            eventCounter -= 1
+
+            if eventCounter == 0 { e.fulfill() }
+        })
+
+        o.next(1)
+        o.next(2)
+        o.next(1)
+
+        wait(for: [e], timeout: 1)
+
+        XCTAssertEqual(a, [1, 2, 1])
     }
 
     func test_observer() {

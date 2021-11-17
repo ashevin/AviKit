@@ -451,6 +451,29 @@ extension Observer {
      */
     public func observer() -> Observer<Value> {
         let observable = Observer<Value>()
+
+        link(observer: observable)
+
+        return observable
+    }
+
+    /**
+     This method links an existing `Observer` to the receiver.
+     */
+    public func link(observer: Observer<Value>) {
+        let wb = WeakBox(observable: observer)
+
+        observer.parent = self.on(next: { wb.observable?.next($0) })
+    }
+}
+
+extension Observer where Value: Equatable {
+    /**
+     This method returns an observable which only issues events for consecutive values which
+     are not identical.
+     */
+    public func distinct() -> DistinctObservable<Value> {
+        let observable = DistinctObservable<Value>()
         let wb = WeakBox(observable: observable)
 
         observable.parent = self.on(next: { wb.observable?.next($0) })

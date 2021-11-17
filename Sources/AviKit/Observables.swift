@@ -106,6 +106,20 @@ public final class DebouncingObservable<Value>: Observer<Value> {
     }
 }
 
+public final class DistinctObservable<Value: Equatable>: Observer<Value> {
+    var previousValue: Value? = nil
+
+    override public func next(_ value: Value) {
+        guard previousValue == nil || previousValue != value else {
+            return
+        }
+
+        previousValue = value
+
+        super.next(value)
+    }
+}
+
 #if os(iOS)
 import UIKit
 
