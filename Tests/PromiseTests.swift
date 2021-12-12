@@ -27,7 +27,7 @@ class PromiseTests: XCTestCase {
         let p = Promise<Int>()
 
         DispatchQueue(label: "").asyncAfter(deadline: .now() + delay) {
-            p.signal(x)
+            p.fulfill(x)
         }
 
         return p
@@ -37,7 +37,7 @@ class PromiseTests: XCTestCase {
         let p = Promise<Int>()
 
         DispatchQueue(label: "").async {
-            p.signal(TestError(m))
+            p.reject(TestError(m))
         }
 
         return p
@@ -50,7 +50,7 @@ class PromiseTests: XCTestCase {
             .then { x -> Void in
                 XCTAssertEqual(x, Int?(1))
             }
-            .error { error in
+            .catch { _ in
                 XCTFail("Shouldn't reach here.")
             }
             .finally {
@@ -67,8 +67,8 @@ class PromiseTests: XCTestCase {
             .then { _ -> Void in
                 XCTFail("Shouldn't reach here.")
             }
-            .error { error in
-                XCTAssertEqual((error as? TestError)?.m, "a")
+            .catch {
+                XCTAssertEqual(($0 as! TestError).m, "a")
             }
             .finally {
                 e.fulfill()
@@ -102,7 +102,7 @@ class PromiseTests: XCTestCase {
                     })
                     .then({ _ in })
             }
-            .error { error in
+            .catch { error in
                 XCTAssertTrue(false, "Unexpected error: \(error)")
             }
             .finally {
@@ -123,8 +123,8 @@ class PromiseTests: XCTestCase {
             .mapError { _ in
                 return TestError("b")
             }
-            .error { error in
-                XCTAssertEqual((error as? TestError)?.m, "b")
+            .catch {
+                XCTAssertEqual(($0 as! TestError).m, "b")
             }
             .finally {
                 e.fulfill()
@@ -143,7 +143,7 @@ class PromiseTests: XCTestCase {
             .then { x -> Void in
                 XCTAssertEqual(x, Int?(2))
             }
-            .error { error in
+            .catch { _ in
                 XCTFail("Shouldn't reach here.")
             }
             .finally {
@@ -160,8 +160,8 @@ class PromiseTests: XCTestCase {
             .then { x -> Promise<Int> in
                 throw TestError("a")
             }
-            .error { error in
-                XCTAssertEqual((error as? TestError)?.m, "a")
+            .catch {
+                XCTAssertEqual(($0 as! TestError).m, "a")
             }
             .finally {
                 e.fulfill()
@@ -180,8 +180,8 @@ class PromiseTests: XCTestCase {
             .mapError { _ in
                 return TestError("b")
             }
-            .error { error in
-                XCTAssertEqual((error as? TestError)?.m, "b")
+            .catch {
+                XCTAssertEqual(($0 as! TestError).m, "b")
             }
             .finally {
                 e.fulfill()
@@ -202,8 +202,8 @@ class PromiseTests: XCTestCase {
             .then { _ -> Void in
                 XCTFail("Shouldn't reach here.")
             }
-            .error { error in
-                XCTAssertEqual((error as? TestError)?.m, "a")
+            .catch {
+                XCTAssertEqual(($0 as! TestError).m, "a")
             }
             .finally {
                 e.fulfill()
@@ -222,14 +222,14 @@ class PromiseTests: XCTestCase {
             .then { _ -> Promise<Int> in
                 throw TestError("a")
             }
-            .error { error in
-                XCTAssertEqual((error as? TestError)?.m, "a")
+            .catch {
+                XCTAssertEqual(($0 as! TestError).m, "a")
             }
             .finally {
                 e.fulfill()
             }
 
-        wait(for: [e], timeout: 1.0)
+        wait(for: [e], timeout: 2.0)
     }
 
     func test_attempt_with_immediate_success() {
@@ -243,7 +243,7 @@ class PromiseTests: XCTestCase {
         .then { _ in
             e.fulfill()
         }
-        .error {
+        .catch {
             XCTAssert(false, "Received unexpected error: \($0)")
         }
 
@@ -263,7 +263,7 @@ class PromiseTests: XCTestCase {
         .then { _ in
             XCTFail("Shouldn't reach here.")
         }
-        .error {
+        .catch {
             if let e = $0 as? TestError {
                 XCTAssertEqual(e.m, "b")
             }
@@ -296,7 +296,7 @@ class PromiseTests: XCTestCase {
         .then({ _ in
             e.fulfill()
         })
-        .error({
+        .catch({
             XCTAssert(false, "Received unexpected error: \($0)")
         })
 
@@ -316,7 +316,7 @@ class PromiseTests: XCTestCase {
         .then({ _ in
             throw TestError("b")
         })
-        .error({
+        .catch({
             if let e = $0 as? TestError {
                 XCTAssertNotEqual(e.m, "b")
             }
@@ -336,7 +336,7 @@ class PromiseTests: XCTestCase {
         let e = expectation(description: "")
 
         let p = Promise<Int>()
-        p.signal(1)
+        p.fulfill(1)
 
         p.then { _ in
             e.fulfill()
@@ -354,7 +354,7 @@ class PromiseTests: XCTestCase {
             e.fulfill()
         }
 
-        p.signal(1)
+        p.fulfill(1)
 
         wait(for: [e], timeout: 0.1)
     }
@@ -368,7 +368,7 @@ class PromiseTests: XCTestCase {
             e.fulfill()
         }
 
-        DispatchQueue.global().async { p.signal(1) }
+        DispatchQueue.global().async { p.fulfill(1) }
 
         wait(for: [e], timeout: 0.1)
     }
@@ -378,7 +378,7 @@ class PromiseTests: XCTestCase {
 
         let p = Promise<Int>()
 
-        DispatchQueue.global().async { p.signal(1) }
+        DispatchQueue.global().async { p.fulfill(1) }
 
         p.then { _ in
             e.fulfill()
@@ -392,7 +392,7 @@ class PromiseTests: XCTestCase {
 
         let p = Promise<Int>()
 
-        p.signal(1)
+        p.fulfill(1)
 
         DispatchQueue.global().async {
             p.then { _ in
@@ -414,7 +414,7 @@ class PromiseTests: XCTestCase {
             }
         }
 
-        p.signal(1)
+        p.fulfill(1)
 
         wait(for: [e], timeout: 0.1)
     }
@@ -424,7 +424,7 @@ class PromiseTests: XCTestCase {
         let e2 = expectation(description: "")
 
         let p = Promise<Int>()
-        p.signal(1)
+        p.fulfill(1)
 
         p.then { _ -> Promise<Int> in
             e1.fulfill()
@@ -441,7 +441,7 @@ class PromiseTests: XCTestCase {
         let e2 = expectation(description: "")
 
         let p = Promise<Int>()
-        p.signal(1)
+        p.fulfill(1)
 
         p.then { _ -> Int in
             e1.fulfill()
@@ -458,7 +458,7 @@ class PromiseTests: XCTestCase {
 
         Promise<Int>(TestError("a"))
             .then { _ in XCTFail() }
-            .error { _ in e.fulfill() }
+            .catch { _ in e.fulfill() }
 
         wait(for: [e], timeout: 0.1)
     }
@@ -468,7 +468,7 @@ class PromiseTests: XCTestCase {
 
         Promise<Int>(TestError("a"))
             .then { _ in return Promise(2) }
-            .error { _ in e.fulfill() }
+            .catch { _ in e.fulfill() }
 
         wait(for: [e], timeout: 0.1)
     }
@@ -478,7 +478,7 @@ class PromiseTests: XCTestCase {
 
         Promise<Int>(1)
             .then { _ in return Promise<Int>(TestError("b")) }
-            .error { _ in e.fulfill() }
+            .catch { _ in e.fulfill() }
 
         wait(for: [e], timeout: 0.1)
     }
@@ -488,7 +488,7 @@ class PromiseTests: XCTestCase {
 
         Promise<Int>(1)
             .then { _ in throw TestError("b") }
-            .error { _ in e.fulfill() }
+            .catch { _ in e.fulfill() }
 
         wait(for: [e], timeout: 0.1)
     }
@@ -499,7 +499,7 @@ class PromiseTests: XCTestCase {
         Promise<Int>(1)
             .then { _ in throw TestError("b") }
             .then { _ -> String in XCTFail(); return "c" }
-            .error { _ in e.fulfill() }
+            .catch { _ in e.fulfill() }
 
         wait(for: [e], timeout: 0.1)
     }
@@ -535,7 +535,7 @@ class PromiseTests: XCTestCase {
 
         p
             .then { _ in }
-            .error { _ in }
+            .catch { _ in }
             .finally { e.fulfill() }
 
         wait(for: [e], timeout: 0.1)
@@ -548,7 +548,7 @@ class PromiseTests: XCTestCase {
 
         p
             .then { _ in return Promise(2) }
-            .error { _ in }
+            .catch { _ in }
             .finally { e.fulfill() }
 
         wait(for: [e], timeout: 0.1)
@@ -561,11 +561,10 @@ class PromiseTests: XCTestCase {
 
         p
             .mapError { _ in return TestError("b") }
-            .error({
-                if let err = $0 as? TestError {
-                    XCTAssertEqual(err.m, "b")
-                    e.fulfill()
-                }
+            .catch({
+                XCTAssertEqual(($0 as! TestError).m, "b")
+
+                e.fulfill()
             })
 
         wait(for: [e], timeout: 0.1)
@@ -591,18 +590,125 @@ class PromiseTests: XCTestCase {
         let p = Promise<Int>()
 
         p
-            .mapError { _ in return TestError("b") }
             .then({
                 XCTAssertEqual($0, 1)
-            })
-            .finally({
+
                 e.fulfill()
             })
 
-        p.signal(1)
-        p.signal(2)
+        p.fulfill(1)
+        p.fulfill(2)
 
         wait(for: [e], timeout: 0.1)
     }
+
+    func test_init_with_block_success() {
+        let e = expectation(description: "")
+
+        Promise<Int> { fulfill, _ in
+            fulfill(1)
+        }
+        .then({
+            XCTAssertEqual($0, 1)
+
+            e.fulfill()
+        })
+
+        wait(for: [e], timeout: 0.1)
+    }
+
+    func test_init_with_block_error() {
+        let e = expectation(description: "")
+
+        Promise<Int> { _, reject in
+            reject(TestError("block"))
+        }
+        .catch({
+            XCTAssertEqual(($0 as! TestError).m, "block")
+
+            e.fulfill()
+        })
+
+        wait(for: [e], timeout: 0.1)
+    }
+
+    func test_all_with_success() {
+        let e = expectation(description: "")
+
+        let promises = [
+            asyncPromise(1),
+            asyncPromise(2),
+            asyncPromise(3),
+        ]
+
+        all(promises)
+            .then({
+                XCTAssertEqual($0, [1, 2, 3])
+
+                e.fulfill()
+            })
+
+        wait(for: [e], timeout: 1.0)
+    }
+
+    func test_all_with_failure() {
+        let e = expectation(description: "")
+
+        let promises = [
+            asyncPromise(1),
+            asyncPromise(2),
+            asyncError("all")
+        ]
+
+        all(promises)
+            .catch({
+                XCTAssertEqual(($0 as! TestError).m, "all")
+
+                e.fulfill()
+            })
+
+        wait(for: [e], timeout: 1.0)
+    }
+
+    func test_await_with_success() {
+        do {
+            let i = try `await`(Promise<Int>(3))
+
+            XCTAssertEqual(i, 3)
+        }
+        catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func test_await_with_failure() {
+        do {
+            _ = try `await`(asyncError("await"))
+
+            XCTFail("Shouldn't reach here.")
+        }
+        catch {
+            XCTAssertEqual((error as! TestError).m, "await")
+        }
+    }
+
+#if compiler(>=5.5.2)
+    func test_async_success() async {
+        let x = try! await Promise<Int>(1).async()
+
+        XCTAssertEqual(x, 1)
+    }
+
+    func test_async_error() async {
+        do {
+            _ = try await Promise<Int>(TestError("async")).async()
+
+            XCTFail("Shouldn't reach here.")
+        }
+        catch {
+            XCTAssertEqual((error as! TestError).m, "async")
+        }
+    }
+#endif
 
 }

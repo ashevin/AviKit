@@ -37,11 +37,11 @@ public func promise<Return>(_ task: (@escaping (Return?, Error?) -> ()) -> ()) -
 
     task { (value: Return?, error: Error?) -> Void in
         if let error = error {
-            p.signal(error)
+            p.reject(error)
         }
 
         if let value = value {
-            p.signal(value)
+            p.fulfill(value)
         }
     }
 

@@ -15,9 +15,25 @@ enum Result<Value> {
 
     func unwrap() throws -> Value {
         switch self {
-        case .success(let v): return v
-        case .failure(let e): throw e
+            case .success(let v): return v
+            case .failure(let e): throw e
         }
+    }
+
+    var success: Value? {
+        if case let .success(value) = self {
+            return value
+        }
+
+        return nil
+    }
+
+    var failure: Error? {
+        if case let .failure(error) = self {
+            return error
+        }
+
+        return nil
     }
 }
 
@@ -55,37 +71,55 @@ public class Future<Value> {
     }
 }
 
+
 public final class Promise<Value>: Future<Value> {
+    public typealias SuccessSignal = (Value) -> ()
+    public typealias ErrorSignal = (Error) -> ()
+
     override public init() { }
 
     public convenience init(_ value: Value) {
         self.init()
-        signal(value)
+        fulfill(value)
     }
 
     public convenience init(_ error: Error) {
         self.init()
-        signal(error)
+        reject(error)
+    }
+
+    public convenience init(_ block: (_ fulfill: SuccessSignal, _ reject: ErrorSignal) -> ()) {
+        self.init()
+
+        block(
+            { value in
+                self.fulfill(value)
+            },
+            { error in
+                self.reject(error)
+            }
+        )
     }
 
     @discardableResult
-    public func signal(_ value: Value) -> Promise {
+    func fulfill(_ value: Value) -> Promise {
         result = result ?? .success(value)
 
         return self
     }
 
     @discardableResult
-    public func signal(_ error: Error) -> Promise {
+    func reject(_ error: Error) -> Promise {
         result = result ?? .failure(error)
 
         return self
     }
 }
 
-extension Promise {
-    public func then<NewValue>(on queue: DispatchQueue? = nil,
-                               _ handler: @escaping (Value) throws -> Promise<NewValue>) -> Promise<NewValue> {
+public extension Promise {
+    func then<NewValue>(on queue: DispatchQueue? = nil,
+                        _ handler: @escaping (Value) throws -> Promise<NewValue>) -> Promise<NewValue>
+    {
         let np = Promise<NewValue>()
 
         observe { result in
@@ -94,39 +128,41 @@ extension Promise {
                     try handler(result.unwrap()).observe { np.result = $0 }
                 }
                 catch {
-                    np.signal(error)
+                    np.reject(error)
                 }
             }
 
-            self.run(block, on: queue)
+            run(block, on: queue)
         }
 
         return np
     }
 
-    public func then<NewValue>(on queue: DispatchQueue? = nil,
-                               _ handler: @escaping (Value) throws -> NewValue) -> Promise<NewValue> {
+    func then<NewValue>(on queue: DispatchQueue? = nil,
+                        _ handler: @escaping (Value) throws -> NewValue) -> Promise<NewValue>
+    {
         let np = Promise<NewValue>()
 
         observe { result in
             let block = {
                 do {
-                    np.signal(try handler(try result.unwrap()))
+                    np.fulfill(try handler(try result.unwrap()))
                 }
                 catch {
-                    np.signal(error)
+                    np.reject(error)
                 }
             }
 
-            self.run(block, on: queue)
+            run(block, on: queue)
         }
 
         return np
     }
 
     @discardableResult
-    public func then(on queue: DispatchQueue? = nil,
-                     _ handler: @escaping (Value) -> ()) -> Promise<Value> {
+    func then(on queue: DispatchQueue? = nil,
+              _ handler: @escaping (Value) -> ()) -> Promise<Value>
+    {
         observe { result in
             let block = {
                 if case let .success(value) = result {
@@ -134,20 +170,21 @@ extension Promise {
                 }
             }
 
-            self.run(block, on: queue)
+            run(block, on: queue)
         }
 
         return self
     }
 
-    public func finally(on queue: DispatchQueue? = nil,
-                        _ handler: @escaping () -> ()) {
-        observe { _ in self.run(handler, on: queue) }
+    func finally(on queue: DispatchQueue? = nil,
+                 _ handler: @escaping () -> ()) {
+        observe { _ in run(handler, on: queue) }
     }
 
     @discardableResult
-    public func error(on queue: DispatchQueue? = nil,
-                      _ handler: @escaping (Error) -> ()) -> Promise<Value> {
+    func `catch`(on queue: DispatchQueue? = nil,
+                 _ handler: @escaping (Error) -> ()) -> Promise<Value>
+    {
         observe { result in
             let block = {
                 if case let .failure(error) = result {
@@ -155,20 +192,20 @@ extension Promise {
                 }
             }
 
-            self.run(block, on: queue)
+            run(block, on: queue)
         }
 
         return self
     }
 
     @discardableResult
-    public func mapError(_ handler: @escaping (Error) -> (Error)) -> Promise<Value> {
+    func mapError(_ handler: @escaping (Error) -> (Error)) -> Promise<Value> {
         let p = Promise<Value>()
 
         observe { result in
             switch result {
-            case .success(let value): p.signal(value)
-            case .failure(let error): p.signal(handler(error))
+                case .success(let value): p.fulfill(value)
+                case .failure(let error): p.reject(handler(error))
             }
         }
 
@@ -176,14 +213,50 @@ extension Promise {
     }
 }
 
-extension Promise {
-    private func run(_ block: @escaping () -> (), on queue: DispatchQueue?) {
-        if let queue = queue {
-            queue.async(execute: block)
+#if compiler(>=5.5.2)
+public extension Promise {
+    func async() async throws -> Value {
+        return try await withCheckedThrowingContinuation { continuation in
+            self
+                .observe { result in
+                    switch result {
+                        case .success(let value): continuation.resume(returning: value)
+                        case .failure(let error): continuation.resume(throwing: error)
+                    }
+                }
         }
-        else {
-            block()
-        }
+    }
+}
+#endif
+
+public extension Promise {
+    @available(*, deprecated, renamed: "fulfill")
+    @discardableResult
+    func signal(_ value: Value) -> Promise {
+        fulfill(value)
+    }
+
+    @available(*, deprecated, renamed: "reject")
+    @discardableResult
+    func signal(_ error: Error) -> Promise {
+        reject(error)
+    }
+
+    @available(*, deprecated, renamed: "catch")
+    @discardableResult
+    func error(on queue: DispatchQueue? = nil,
+               _ handler: @escaping (Error) -> ()) -> Promise<Value>
+    {
+        `catch`(on: queue, handler)
+    }
+}
+
+func run(_ block: @escaping () -> (), on queue: DispatchQueue?) {
+    if let queue = queue {
+        queue.async(execute: block)
+    }
+    else {
+        block()
     }
 }
 
@@ -191,45 +264,4 @@ extension Promise: CustomDebugStringConvertible {
     public var debugDescription: String {
         return "Promise [\(Unmanaged<AnyObject>.passUnretained(self as AnyObject).toOpaque())]"
     }
-}
-
-public func attempt<T>(_ tries: Int, retryInterval: TimeInterval = 0.0, closure: @escaping (Int) throws -> Promise<T>) -> Promise<T> {
-    return attempt(retryIntervals: Array(repeating: retryInterval, count: tries - 1), closure: closure)
-}
-
-public func attempt<T>(retryIntervals: [TimeInterval], closure: @escaping (Int) throws -> Promise<T>) -> Promise<T> {
-    let p = Promise<T>()
-
-    let tries = retryIntervals.count + 1
-
-    var attempts = 0
-
-    func attempt() {
-        attempts += 1
-
-        do {
-            try closure(attempts)
-                .then({
-                    p.signal($0)
-                })
-                .error({
-                    if attempts < tries {
-                        DispatchQueue.global().asyncAfter(deadline: .now() + retryIntervals[attempts - 1]) {
-                            attempt()
-                        }
-
-                        return
-                    }
-
-                    p.signal($0)
-                })
-        }
-        catch {
-            p.signal(error)
-        }
-    }
-
-    attempt()
-
-    return p
 }

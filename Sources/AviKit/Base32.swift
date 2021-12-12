@@ -61,14 +61,13 @@ public enum Base32 {
             result.append(bytes[i] << 3 + bytes[i + 1][2, 4])
 
             let b: [() -> (UInt8)] = [
-            { let b = bytes[i + 1][0, 1] << 6 + bytes[i + 2] << 1 + bytes[i + 3][4]
-                return b },
+                { bytes[i + 1][0, 1] << 6 + bytes[i + 2] << 1 + bytes[i + 3][4] },
 
-            { bytes[i + 3][0, 3] << 4 + bytes[i + 4][1, 4] },
+                { bytes[i + 3][0, 3] << 4 + bytes[i + 4][1, 4] },
 
-            { bytes[i + 4][0] << 7 + bytes[i + 5] << 2 + bytes[i + 6][3, 4] },
+                { bytes[i + 4][0] << 7 + bytes[i + 5] << 2 + bytes[i + 6][3, 4] },
 
-            { bytes[i + 6][0, 2] << 5 + bytes[i + 7] },
+                { bytes[i + 6][0, 2] << 5 + bytes[i + 7] },
             ]
 
             (0 ..< 4 - (i + 8 < bytes.count ? 0 : paddingIndex!))
