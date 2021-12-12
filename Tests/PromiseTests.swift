@@ -651,13 +651,32 @@ class PromiseTests: XCTestCase {
         wait(for: [e], timeout: 1.0)
     }
 
+    func test_all_with_optional_success() {
+        let e = expectation(description: "")
+
+        let promises: [Promise<Int?>] = [
+            Promise(1),
+            Promise(2),
+            Promise(nil),
+        ]
+
+        all(promises)
+            .then({
+                XCTAssertEqual($0, [1, 2, nil])
+
+                e.fulfill()
+            })
+
+        wait(for: [e], timeout: 1.0)
+    }
+
     func test_all_with_failure() {
         let e = expectation(description: "")
 
         let promises = [
             asyncPromise(1),
+            asyncError("all"),
             asyncPromise(2),
-            asyncError("all")
         ]
 
         all(promises)

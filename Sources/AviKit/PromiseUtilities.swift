@@ -1,4 +1,3 @@
-
 //
 //  PromiseUtilities.swift
 // AviKit
@@ -32,7 +31,7 @@ public func all<Value>(on queue: DispatchQueue? = nil, _ promises: [Promise<Valu
                             p.fulfill(values)
                         }
                         else {
-                            if let error = results.compactMap({ $0 }).compactMap({ $0.failure }).first {
+                            if let error = results.compactMap({ $0?.failure }).first {
                                 p.reject(error)
                             }
                         }
