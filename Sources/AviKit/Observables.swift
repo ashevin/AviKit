@@ -9,6 +9,19 @@
 import Foundation
 import Dispatch
 
+@propertyWrapper public struct PrivateObservable<Value> {
+    public let wrappedValue: Observer<Value>
+    public let projectedValue: Observable<Value>
+
+    public init(wrappedValue: Observer<Value>) {
+        self.wrappedValue = wrappedValue
+
+        projectedValue = Observable<Value>()
+
+        projectedValue.link(observer: wrappedValue)
+    }
+}
+
 @propertyWrapper public struct ObservableProperty<Value> {
     public var wrappedValue: Value {
         didSet { observable.next(wrappedValue) }

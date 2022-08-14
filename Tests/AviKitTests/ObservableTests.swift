@@ -15,6 +15,16 @@ import UIKit
 
 class ObservableTests: XCTestCase {
 
+    @PrivateObservable var moo = Observer<Int>()
+
+    func test_stuff() {
+        let linkBag = LinkBag()
+
+        moo.debug().add(to: linkBag)
+
+        $moo.next(3)
+    }
+
     func test_next_before_observe() {
         let e = expectation(description: "")
 

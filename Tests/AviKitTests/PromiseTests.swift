@@ -712,12 +712,14 @@ class PromiseTests: XCTestCase {
     }
 
 #if compiler(>=5.5.2)
+	@available(iOS 12, macOS 15.5, *)
     func test_async_success() async {
         let x = try! await Promise<Int>(1).async()
 
         XCTAssertEqual(x, 1)
     }
 
+	@available(iOS 12, macOS 15.5, *)
     func test_async_error() async {
         do {
             _ = try await Promise<Int>(TestError("async")).async()

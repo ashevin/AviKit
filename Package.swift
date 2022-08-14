@@ -17,6 +17,9 @@ let package = Package(
 	.target(
 	    name: "AviKit",
 	    dependencies: []),
+        .testTarget(
+            name: "AviKitTests",
+            dependencies: ["AviKit"]),
     ]
 )
 
