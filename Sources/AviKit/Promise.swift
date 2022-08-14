@@ -214,7 +214,7 @@ public extension Promise {
 }
 
 #if compiler(>=5.5.2)
-@available(iOS 12, macOS 15.5, *)
+@available(iOS 13, macOS 15.5, *)
 public extension Promise {
     func async() async throws -> Value {
         return try await withCheckedThrowingContinuation { continuation in
