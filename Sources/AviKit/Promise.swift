@@ -102,14 +102,14 @@ public final class Promise<Value>: Future<Value> {
     }
 
     @discardableResult
-    func fulfill(_ value: Value) -> Promise {
+    public func fulfill(_ value: Value) -> Promise {
         result = result ?? .success(value)
 
         return self
     }
 
     @discardableResult
-    func reject(_ error: Error) -> Promise {
+    public func reject(_ error: Error) -> Promise {
         result = result ?? .failure(error)
 
         return self
@@ -122,7 +122,7 @@ public extension Promise {
     {
         let np = Promise<NewValue>()
 
-        observe { [unowned self] result in
+        observe { result in
             let block = {
                 do {
                     try handler(result.unwrap()).observe { np.result = $0 }
@@ -143,7 +143,7 @@ public extension Promise {
     {
         let np = Promise<NewValue>()
 
-        observe { [unowned self] result in
+        observe { result in
             let block = {
                 do {
                     np.fulfill(try handler(try result.unwrap()))
@@ -163,7 +163,7 @@ public extension Promise {
     func then(on queue: DispatchQueue? = nil,
               _ handler: @escaping (Value) -> ()) -> Promise<Value>
     {
-        observe { [unowned self] result in
+        observe { result in
             let block = {
                 if case let .success(value) = result {
                     handler(value)
@@ -185,7 +185,7 @@ public extension Promise {
     func `catch`(on queue: DispatchQueue? = nil,
                  _ handler: @escaping (Error) -> ()) -> Promise<Value>
     {
-        observe { [unowned self] result in
+        observe { result in
             let block = {
                 if case let .failure(error) = result {
                     handler(error)
