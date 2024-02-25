@@ -10,9 +10,11 @@ import Foundation
 
 public extension Data {
     init?(hexString: String) {
+        precondition(hexString.count.isMultiple(of: 2))
+
         var data = Data()
 
-        for index in stride(from: 0, to: hexString.count, by: 2) {
+        for index in stride(from: 0, to: hexString.count - 2, by: 2) {
             let sub: String = hexString[index ..< index + Swift.min(2, hexString.count - index)]
 
             guard let c = UInt8(sub, radix: 16) else {
