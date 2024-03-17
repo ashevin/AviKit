@@ -9,18 +9,22 @@
 import Foundation
 
 extension FixedWidthInteger {
+    @inlinable
     subscript(range: Range<Int>) -> Self {
         return self[range.lowerBound, range.upperBound - 1]
     }
 
+    @inlinable
     subscript(range: ClosedRange<Int>) -> Self {
         return self[range.lowerBound, range.upperBound]
     }
 
+    @inlinable
     subscript(bit: Int) -> Self {
         return self[bit, bit]
     }
 
+    @inlinable
     subscript(start: Int, end: Int) -> Self {
         precondition(start < Self.bitWidth, "start out of range")
         precondition(end < Self.bitWidth, "end out of range")

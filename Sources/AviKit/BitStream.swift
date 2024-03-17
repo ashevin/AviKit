@@ -91,3 +91,11 @@ extension BitStream: Collection, RandomAccessCollection {
         return count
     }
 }
+
+extension BitStream: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        self.reduce("") { partialResult, bit in
+            partialResult + String(bit)
+        }
+    }
+}

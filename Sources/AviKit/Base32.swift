@@ -14,64 +14,60 @@ public enum Base32 {
 
         var s = [Character]()
 
-        let extraCount = stream.bytes.count % 5
-        let padding = ["", "======", "====", "===", "="][extraCount]
+        let count = stream.count
+
+        stream.bytes += count % 5 == 0 ? [] : [ 0 ]
 
         // calculate the nearest multiple of 5 which is equal-to-or-greater than count
-        let count = stream.count
         let limit = count - (count - (count / 5 * 5)) + (count % 5 == 0 ? 0 : 5)
-
-        stream.bytes += Array(repeating: 0, count: 5 - extraCount)
 
         for i in stride(from: 0, to: limit, by: 5) {
             s.append(toTable[stream[i ... i + 4]]!)
         }
 
-        return String(s) + padding
+        return String(s + Array(repeating: "=", count: (8 - (s.count % 8)) % 8))
     }
 
     public static func decode(_ string: String) -> [UInt8]? {
-        enum E: Error { case invalidChar }
+        guard string.count.isMultiple(of: 8) else { return nil }
 
-        guard string.count % 8 == 0 else { return nil }
+        let string = string.uppercased().map { $0 }.filter({ $0 != "=" })
+        var bytes = string.compactMap { fromTable[$0] }[...]
+
+        guard bytes.count == string.count else { return nil }
 
         var result = [UInt8]()
 
-        let string = string.uppercased().map { $0 }
-        let bytes: [UInt8]
+        var accumulator: UInt8 = 0
+        var bitsNeeded = 8
+        var bitsRemaining = 0
 
-        do {
-            bytes = try string.compactMap {
-                guard $0 != "=" else { return nil }
+        var byte: UInt8 = 0
 
-                guard let v = fromTable[$0] else { throw E.invalidChar }
+        while bytes.startIndex < bytes.endIndex {
+            if bitsRemaining == 0 {
+                byte = bytes[bytes.startIndex]; bytes = bytes[(bytes.startIndex + 1)...]
 
-                return v
+                bitsRemaining = 5
             }
-        }
-        catch {
-            return nil
-        }
 
-        let paddingCounts = [0, 1, 3, 4, 6]
-        let paddingCount = string.count - (string.firstIndex(of: "=") ?? bytes.count)
-        let paddingIndex = paddingCounts.firstIndex(of: paddingCount)
+            let bitsTaken = min(bitsRemaining, bitsNeeded)
 
-        for i in stride(from: 0, to: bytes.count, by: 8) {
-            result.append(bytes[i] << 3 + bytes[i + 1][2, 4])
+            let high = 5 - (5 - bitsTaken) + (bitsRemaining - bitsTaken) - 1
+            let low = high - bitsTaken + 1
 
-            let b: [() -> (UInt8)] = [
-                { bytes[i + 1][0, 1] << 6 + bytes[i + 2] << 1 + bytes[i + 3][4] },
+            bitsNeeded -= bitsTaken
+            bitsRemaining -= bitsTaken
 
-                { bytes[i + 3][0, 3] << 4 + bytes[i + 4][1, 4] },
+            accumulator <<= bitsTaken
+            accumulator += byte[low, high]
 
-                { bytes[i + 4][0] << 7 + bytes[i + 5] << 2 + bytes[i + 6][3, 4] },
+            if bitsNeeded == 0 {
+                result.append(accumulator)
 
-                { bytes[i + 6][0, 2] << 5 + bytes[i + 7] },
-            ]
-
-            (0 ..< 4 - (i + 8 < bytes.count ? 0 : paddingIndex!))
-                .forEach { result.append(b[$0]()) }
+                accumulator = 0
+                bitsNeeded = 8
+            }
         }
 
         return result
