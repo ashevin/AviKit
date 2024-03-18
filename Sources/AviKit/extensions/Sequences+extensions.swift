@@ -28,12 +28,12 @@ public extension Data {
     }
 
     init?(base32Encoded base32String: String) {
-        guard let d = Base32.decode(base32String) else { return nil }
+        guard let d = BaseNCoding.Base32.decode(base32String) else { return nil }
         self.init(d)
     }
 
     func base32EncodedString() -> String {
-        return Base32.encode(self)
+        return BaseNCoding.Base32.encode(self)
     }
 }
 
