@@ -10,7 +10,6 @@ import XCTest
 @testable import AviKit
 
 class Base32Tests: XCTestCase {
-
     func test_padding_0() {
         let s = "abcde"
         let b = Base32.encode(s.utf8)

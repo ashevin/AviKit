@@ -10,7 +10,6 @@ import XCTest
 import AviKit
 
 class XDRTests: XCTestCase {
-
     func test_bool_true() {
         let a: Bool = true
         let x = try! XDREncoder.encode(a)
@@ -181,5 +180,4 @@ class XDRTests: XCTestCase {
         XCTAssertEqual(s.b, s2.b)
         XCTAssertEqual(s.a, s2.a)
     }
-
 }

@@ -10,7 +10,6 @@ import XCTest
 @testable import AviKit
 
 class PromiseTests: XCTestCase {
-
     override func setUp() {
         print(Promise<Int>().debugDescription)
     }
@@ -731,5 +730,4 @@ class PromiseTests: XCTestCase {
         }
     }
 #endif
-
 }
