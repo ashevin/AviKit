@@ -9,18 +9,8 @@
 import Foundation
 import Dispatch
 
-enum Result<Value> {
-    case success(Value)
-    case failure(Error)
-
-    func unwrap() throws -> Value {
-        switch self {
-            case .success(let v): return v
-            case .failure(let e): throw e
-        }
-    }
-
-    var success: Value? {
+extension Swift.Result {
+    var success: Success? {
         if case let .success(value) = self {
             return value
         }
@@ -38,11 +28,11 @@ enum Result<Value> {
 }
 
 public class Future<Value> {
-    typealias Observer = (Result<Value>) -> ()
+    typealias Observer = (Result<Value, Swift.Error>) -> ()
 
     private var lock = DispatchSemaphore(value: 1)
 
-    fileprivate(set) var result: Result<Value>? {
+    fileprivate(set) var result: Result<Value, Swift.Error>? {
         didSet {
             guard oldValue == nil else { return }
 
@@ -64,7 +54,7 @@ public class Future<Value> {
         result.map(observer)
     }
 
-    func report(_ result: Result<Value>) {
+    func report(_ result: Result<Value, Swift.Error>) {
         lock.wait()
         callbacks.forEach { $0(result) }
         lock.signal()
@@ -125,7 +115,7 @@ public extension Promise {
         observe { result in
             let block = {
                 do {
-                    try handler(result.unwrap()).observe { np.result = $0 }
+                    try handler(result.get()).observe { np.result = $0 }
                 }
                 catch {
                     np.reject(error)
@@ -146,7 +136,7 @@ public extension Promise {
         observe { result in
             let block = {
                 do {
-                    np.fulfill(try handler(try result.unwrap()))
+                    np.fulfill(try handler(try result.get()))
                 }
                 catch {
                     np.reject(error)

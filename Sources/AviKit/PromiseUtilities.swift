@@ -17,7 +17,7 @@ public func all<Value>(on queue: DispatchQueue? = nil, _ promises: [Promise<Valu
     let p = Promise<[Value]>()
 
     let block = {
-        var results: [Result<Value>?] = Array(repeating: nil, count: promises.count)
+        var results: [Result<Value, Swift.Error>?] = Array(repeating: nil, count: promises.count)
 
         for i in promises.indices {
             promises[i]
@@ -25,7 +25,7 @@ public func all<Value>(on queue: DispatchQueue? = nil, _ promises: [Promise<Valu
                     results[i] = promises[i].result
 
                     if results.allSatisfy({ $0 != nil }) {
-                        let values = results.compactMap { $0?.success }
+                        let values = results.compactMap { try? $0?.get() }
 
                         if values.count == results.count {
                             p.fulfill(values)
@@ -49,7 +49,7 @@ public func `await`<Value>(_ promise: Promise<Value>) throws -> Value {
     let group = DispatchGroup()
     group.enter()
 
-    var result: Result<Value>? = nil
+    var result: Result<Value, Swift.Error>? = nil
 
     promise.finally {
         result = promise.result
@@ -59,7 +59,7 @@ public func `await`<Value>(_ promise: Promise<Value>) throws -> Value {
 
     group.wait()
 
-    return try result!.unwrap()
+    return try result!.get()
 }
 
 public func attempt<T>(_ tries: Int, retryInterval: TimeInterval = 0.0, closure: @escaping (Int) throws -> Promise<T>) -> Promise<T> {
