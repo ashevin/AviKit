@@ -70,7 +70,7 @@ public struct BaseNCoding {
 
         let count = stream.count
 
-        stream.bytes += count % bitWidth == 0 ? [] : [ 0 ]
+        stream.bytes += count.isMultiple(of: bitWidth) ? [] : [ 0 ]
 
         // calculate the nearest multiple of `bitWidth` which is equal-to-or-greater than count
         let limit = count - (count - (count / bitWidth * bitWidth)) + (count % bitWidth == 0 ? 0 : bitWidth)
@@ -183,11 +183,6 @@ public extension BaseNCoding {
     /// A coder preconfigured to map individual bits to the character '0' and '1' for the bit values _zero_ and _one_, respectively
     static var Base2: Self {
         BaseNCoding(alphabet: "01", padding: nil)
-    }
-
-    /// A coder preconfigured to map bytes to their _octal_ string representation
-    static var Base8: Self {
-        BaseNCoding(alphabet: "01234567", padding: nil)
     }
 }
 
