@@ -22,12 +22,6 @@ class XDRTests: XCTestCase {
         try! XCTAssertEqual(a, XDRDecoder(data: x).decode(Bool.self))
     }
 
-    func test_uint8() {
-        let a: UInt8 = 123
-        let x = try! XDREncoder.encode(a)
-        try! XCTAssertEqual(a, XDRDecoder(data: x).decode(UInt8.self))
-    }
-
     func test_int32() {
         let a: Int32 = 123
         let x = try! XDREncoder.encode(a)
@@ -82,9 +76,9 @@ class XDRTests: XCTestCase {
     }
 
     func test_array() {
-        let a: [UInt8] = [123]
+        let a: [UInt32] = [123]
         let x = try! XDREncoder.encode(a)
-        try! XCTAssertEqual(a, XDRDecoder(data: x).decode([UInt8].self))
+        try! XCTAssertEqual(a, XDRDecoder(data: x).decode([UInt32].self))
     }
 
     func test_string_padded() {
@@ -117,15 +111,15 @@ class XDRTests: XCTestCase {
     }
 
     func test_optional_not_nil() {
-        let a: UInt8? = 123
+        let a: UInt32? = 123
         let x = try! XDREncoder.encode(a)
-        try! XCTAssertEqual(a, XDRDecoder.decode(UInt8?.self, data: x))
+        try! XCTAssertEqual(a, XDRDecoder.decode(UInt32?.self, data: x))
     }
 
     func test_optional_nil() {
-        let a: UInt8? = nil
+        let a: UInt32? = nil
         let x = try! XDREncoder.encode(a)
-        try! XCTAssertEqual(a, XDRDecoder.decode(UInt8?.self, data: x))
+        try! XCTAssertEqual(a, XDRDecoder.decode(UInt32?.self, data: x))
     }
 
     func test_data() {

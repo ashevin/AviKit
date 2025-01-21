@@ -169,7 +169,6 @@ extension FixedWidthInteger where Self: XDRCodable {
     }
 }
 
-extension UInt8: XDRCodable { }
 extension Int32: XDRCodable { }
 extension UInt32: XDRCodable { }
 extension Int64: XDRCodable { }
